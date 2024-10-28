@@ -1457,9 +1457,15 @@ dependencies = [
  "env_logger",
  "libc",
  "log",
+ "prost",
+ "prost-types",
+ "socket2",
  "tokio",
+ "tokio-stream",
+ "tonic",
  "udp-router-common",
  "udp-router-ebpf",
+ "udp-router-protobuf",
  "xtask",
 ]
 

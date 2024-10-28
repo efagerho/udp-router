@@ -1,10 +1,11 @@
 use aya::{
+    maps::{Array, MapData, PerCpuArray, PerCpuValues},
     programs::{Xdp, XdpFlags},
     Ebpf,
 };
 use aya_log::EbpfLogger;
 use log::warn;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot};
 
 use crate::Opt;
 
@@ -60,8 +61,8 @@ macro_rules! read_metric {
 
 struct StatsMaps {
     total_packets: PerCpuArray<MapData, u64>,
-    total_client_to_server_packets: PerCpuArray<MapData, u64>,
-    total_server_to_client_packets: PerCpuArray<MapData, u64>,
+    client_to_server_packets: PerCpuArray<MapData, u64>,
+    server_to_client_packets: PerCpuArray<MapData, u64>,
 }
 struct ConfigMaps {
     local_net_and_mask: Array<MapData, u64>,
@@ -71,15 +72,14 @@ struct ConfigMaps {
 #[derive(Clone, Debug)]
 pub struct RouterStatistics {
     pub total_packets: u64,
-    pub total_client_to_server_packets: u64,
-    pub total_server_to_client_packets: u64,
+    pub client_to_server_packets: u64,
+    pub server_to_client_packets: u64,
 }
 
 //
 // BPF Actor
 //
 
-#[derive(Clone, Debug)]
 pub enum BpfActorMessage {
     GetStats {
         respond_to: oneshot::Sender<RouterStatistics>,
@@ -138,8 +138,8 @@ async fn run_actor(receiver: mpsc::Receiver<BpfActorMessage>, opt: Opt) {
 
     let stats = StatsMaps {
         total_packets: PerCpuArray::try_from(bpf.take_map("TOTAL_PACKETS").unwrap()).unwrap(),
-        total_client_to_server_packets: PerCpuArray::try_from(bpf.take_map("TOTAL_CLIENT_TO_SERVER_PACKETS").unwrap()).unwrap(),
-        total_server_to_client_packets: PerCpuArray::try_from(bpf.take_map("TOTAL_SERVER_TO_CLIENT_PACKETS").unwrap()).unwrap(),
+        client_to_server_packets: PerCpuArray::try_from(bpf.take_map("TOTAL_CLIENT_TO_SERVER_PACKETS").unwrap()).unwrap(),
+        server_to_client_packets: PerCpuArray::try_from(bpf.take_map("TOTAL_SERVER_TO_CLIENT_PACKETS").unwrap()).unwrap(),
     };
 
     let mut actor = BpfActor::new(receiver);

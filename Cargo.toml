@@ -20,6 +20,11 @@ libc = { version = "0.2.159", default-features = false }
 log = { version = "0.4.22", default-features = false }
 tokio = { version = "1.40.0", default-features = false }
 which = { version = "6.0.0", default-features = false }
+prost = "0.13.3"
+prost-types = "0.13.3"
+tonic = "0.12.3"
+socket2 = "0.5.7"
+tokio-stream = { version = "0.1.16", features = ["net"] }
 
 [profile.dev]
 panic = "abort"

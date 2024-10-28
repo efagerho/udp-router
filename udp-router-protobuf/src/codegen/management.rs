@@ -25,7 +25,7 @@ pub struct SetBackendNetAndMaskRequest {
     pub mask: u32,
 }
 /// Generated client implementations.
-pub mod filter_service_client {
+pub mod router_service_client {
     #![allow(
         unused_variables,
         dead_code,
@@ -36,10 +36,10 @@ pub mod filter_service_client {
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
-    pub struct FilterServiceClient<T> {
+    pub struct RouterServiceClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl FilterServiceClient<tonic::transport::Channel> {
+    impl RouterServiceClient<tonic::transport::Channel> {
         /// Attempt to create a new client by connecting to a given endpoint.
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
@@ -50,7 +50,7 @@ pub mod filter_service_client {
             Ok(Self::new(conn))
         }
     }
-    impl<T> FilterServiceClient<T>
+    impl<T> RouterServiceClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
         T::Error: Into<StdError>,
@@ -68,7 +68,7 @@ pub mod filter_service_client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> FilterServiceClient<InterceptedService<T, F>>
+        ) -> RouterServiceClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
@@ -82,7 +82,7 @@ pub mod filter_service_client {
                 http::Request<tonic::body::BoxBody>,
             >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
         {
-            FilterServiceClient::new(InterceptedService::new(inner, interceptor))
+            RouterServiceClient::new(InterceptedService::new(inner, interceptor))
         }
         /// Compress requests with the given encoding.
         ///
@@ -132,11 +132,11 @@ pub mod filter_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/management.FilterService/GetStats",
+                "/management.RouterService/GetStats",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("management.FilterService", "GetStats"));
+                .insert(GrpcMethod::new("management.RouterService", "GetStats"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn set_local_net_and_mask(
@@ -153,12 +153,12 @@ pub mod filter_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/management.FilterService/SetLocalNetAndMask",
+                "/management.RouterService/SetLocalNetAndMask",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
-                    GrpcMethod::new("management.FilterService", "SetLocalNetAndMask"),
+                    GrpcMethod::new("management.RouterService", "SetLocalNetAndMask"),
                 );
             self.inner.unary(req, path, codec).await
         }
@@ -176,19 +176,19 @@ pub mod filter_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/management.FilterService/SetBackendNetAndMask",
+                "/management.RouterService/SetBackendNetAndMask",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
-                    GrpcMethod::new("management.FilterService", "SetBackendNetAndMask"),
+                    GrpcMethod::new("management.RouterService", "SetBackendNetAndMask"),
                 );
             self.inner.unary(req, path, codec).await
         }
     }
 }
 /// Generated server implementations.
-pub mod filter_service_server {
+pub mod router_service_server {
     #![allow(
         unused_variables,
         dead_code,
@@ -197,9 +197,9 @@ pub mod filter_service_server {
         clippy::let_unit_value,
     )]
     use tonic::codegen::*;
-    /// Generated trait containing gRPC methods that should be implemented for use with FilterServiceServer.
+    /// Generated trait containing gRPC methods that should be implemented for use with RouterServiceServer.
     #[async_trait]
-    pub trait FilterService: std::marker::Send + std::marker::Sync + 'static {
+    pub trait RouterService: std::marker::Send + std::marker::Sync + 'static {
         async fn get_stats(
             &self,
             request: tonic::Request<super::GetStatsRequest>,
@@ -217,14 +217,14 @@ pub mod filter_service_server {
         ) -> std::result::Result<tonic::Response<()>, tonic::Status>;
     }
     #[derive(Debug)]
-    pub struct FilterServiceServer<T> {
+    pub struct RouterServiceServer<T> {
         inner: Arc<T>,
         accept_compression_encodings: EnabledCompressionEncodings,
         send_compression_encodings: EnabledCompressionEncodings,
         max_decoding_message_size: Option<usize>,
         max_encoding_message_size: Option<usize>,
     }
-    impl<T> FilterServiceServer<T> {
+    impl<T> RouterServiceServer<T> {
         pub fn new(inner: T) -> Self {
             Self::from_arc(Arc::new(inner))
         }
@@ -275,9 +275,9 @@ pub mod filter_service_server {
             self
         }
     }
-    impl<T, B> tonic::codegen::Service<http::Request<B>> for FilterServiceServer<T>
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for RouterServiceServer<T>
     where
-        T: FilterService,
+        T: RouterService,
         B: Body + std::marker::Send + 'static,
         B::Error: Into<StdError> + std::marker::Send + 'static,
     {
@@ -292,11 +292,11 @@ pub mod filter_service_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
-                "/management.FilterService/GetStats" => {
+                "/management.RouterService/GetStats" => {
                     #[allow(non_camel_case_types)]
-                    struct GetStatsSvc<T: FilterService>(pub Arc<T>);
+                    struct GetStatsSvc<T: RouterService>(pub Arc<T>);
                     impl<
-                        T: FilterService,
+                        T: RouterService,
                     > tonic::server::UnaryService<super::GetStatsRequest>
                     for GetStatsSvc<T> {
                         type Response = super::GetStatsResponse;
@@ -310,7 +310,7 @@ pub mod filter_service_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as FilterService>::get_stats(&inner, request).await
+                                <T as RouterService>::get_stats(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -337,11 +337,11 @@ pub mod filter_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/management.FilterService/SetLocalNetAndMask" => {
+                "/management.RouterService/SetLocalNetAndMask" => {
                     #[allow(non_camel_case_types)]
-                    struct SetLocalNetAndMaskSvc<T: FilterService>(pub Arc<T>);
+                    struct SetLocalNetAndMaskSvc<T: RouterService>(pub Arc<T>);
                     impl<
-                        T: FilterService,
+                        T: RouterService,
                     > tonic::server::UnaryService<super::SetLocalNetAndMaskRequest>
                     for SetLocalNetAndMaskSvc<T> {
                         type Response = ();
@@ -355,7 +355,7 @@ pub mod filter_service_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as FilterService>::set_local_net_and_mask(
+                                <T as RouterService>::set_local_net_and_mask(
                                         &inner,
                                         request,
                                     )
@@ -386,11 +386,11 @@ pub mod filter_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/management.FilterService/SetBackendNetAndMask" => {
+                "/management.RouterService/SetBackendNetAndMask" => {
                     #[allow(non_camel_case_types)]
-                    struct SetBackendNetAndMaskSvc<T: FilterService>(pub Arc<T>);
+                    struct SetBackendNetAndMaskSvc<T: RouterService>(pub Arc<T>);
                     impl<
-                        T: FilterService,
+                        T: RouterService,
                     > tonic::server::UnaryService<super::SetBackendNetAndMaskRequest>
                     for SetBackendNetAndMaskSvc<T> {
                         type Response = ();
@@ -404,7 +404,7 @@ pub mod filter_service_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as FilterService>::set_backend_net_and_mask(
+                                <T as RouterService>::set_backend_net_and_mask(
                                         &inner,
                                         request,
                                     )
@@ -455,7 +455,7 @@ pub mod filter_service_server {
             }
         }
     }
-    impl<T> Clone for FilterServiceServer<T> {
+    impl<T> Clone for RouterServiceServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
             Self {
@@ -468,8 +468,8 @@ pub mod filter_service_server {
         }
     }
     /// Generated gRPC service name
-    pub const SERVICE_NAME: &str = "management.FilterService";
-    impl<T> tonic::server::NamedService for FilterServiceServer<T> {
+    pub const SERVICE_NAME: &str = "management.RouterService";
+    impl<T> tonic::server::NamedService for RouterServiceServer<T> {
         const NAME: &'static str = SERVICE_NAME;
     }
 }

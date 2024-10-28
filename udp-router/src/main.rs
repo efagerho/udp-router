@@ -1,12 +1,11 @@
-use anyhow::Context as _;
 use bpf_actor::BpfActorHandle;
 use clap::Parser;
 #[rustfmt::skip]
 use log::debug;
-use tokio::signal;
 use server::ManagementServer;
 
 mod bpf_actor;
+mod server;
 
 #[derive(Clone, Debug, Parser)]
 struct Opt {
@@ -37,7 +36,7 @@ struct Opt {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() {
     let opt = Opt::parse();
     env_logger::init();
 

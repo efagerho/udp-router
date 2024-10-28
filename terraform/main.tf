@@ -137,6 +137,12 @@ module "clients" {
   vpc_security_group_ids = [aws_security_group.instance.id]
   subnet_id              = aws_subnet.client.id
 
+  root_block_device = [{
+    volume_size = 30
+    volume_type = "gp3"
+    encrypted   = false
+  }]
+
   tags = {
     Terraform   = "true"
     Environment = "dev"
@@ -156,6 +162,12 @@ module "router" {
   monitoring             = true
   vpc_security_group_ids = [aws_security_group.instance.id]
   subnet_id              = aws_subnet.router.id
+
+  root_block_device = [{
+    volume_size = 30
+    volume_type = "gp3"
+    encrypted   = false
+  }]
 
   tags = {
     Terraform   = "true"
@@ -177,6 +189,12 @@ module "servers" {
   monitoring             = true
   vpc_security_group_ids = [aws_security_group.instance.id]
   subnet_id              = aws_subnet.server.id
+
+  root_block_device = [{
+    volume_size = 30
+    volume_type = "gp3"
+    encrypted   = false
+  }]
 
   tags = {
     Terraform   = "true"

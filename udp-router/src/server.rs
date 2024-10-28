@@ -59,8 +59,8 @@ impl RouterService for ManagementServer {
 
         Ok(Response::new(GetStatsResponse {
             total_packets: stats.total_packets,
-            total_client_to_server: stats.total_client_to_server_packets,
-            total_server_to_client: stats.total_server_to_client_packets,
+            client_to_server_packets: stats.client_to_server_packets,
+            server_to_client_packets: stats.server_to_client_packets,
         }))
     }
 
