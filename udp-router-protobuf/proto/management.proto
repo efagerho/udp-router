@@ -8,6 +8,7 @@ service RouterService {
   rpc GetStats(GetStatsRequest) returns (GetStatsResponse) {}
   rpc SetLocalNetAndMask(SetLocalNetAndMaskRequest) returns (google.protobuf.Empty) {}
   rpc SetBackendNetAndMask(SetBackendNetAndMaskRequest) returns (google.protobuf.Empty) {}
+  rpc SetGatewayMacAddress(SetGatewayMacAddressRequest) returns (google.protobuf.Empty) {}
 }
 
 message GetStatsRequest {
@@ -31,4 +32,8 @@ message SetLocalNetAndMaskRequest {
 message SetBackendNetAndMaskRequest {
   uint32 net = 1;
   uint32 mask = 2;
+}
+
+message SetGatewayMacAddressRequest {
+  uint64 mac = 1;
 }

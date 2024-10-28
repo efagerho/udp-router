@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use crate::bpf_actor::BpfActorHandle;
 use udp_router_protobuf::management::router_service_server::{RouterService, RouterServiceServer};
 use udp_router_protobuf::management::{
-    GetStatsRequest, GetStatsResponse, SetLocalNetAndMaskRequest, SetBackendNetAndMaskRequest
+    GetStatsRequest, GetStatsResponse, SetLocalNetAndMaskRequest, SetBackendNetAndMaskRequest, SetGatewayMacAddressRequest
 };
 use tokio::net::TcpListener;
 use tonic::{transport::Server, Request, Response, Status};
@@ -73,6 +73,12 @@ impl RouterService for ManagementServer {
     async fn set_backend_net_and_mask(&self, req: Request<SetBackendNetAndMaskRequest>) -> Result<Response<()>, Status> {
         let req = req.into_inner();
         self.bpf.set_backend_net_mask(req.net, req.mask).await;
+        Ok(Response::new(()))
+    }
+
+    async fn set_gateway_mac_address(&self, req: Request<SetGatewayMacAddressRequest>) -> Result<Response<()>, Status> {
+        let req = req.into_inner();
+        self.bpf.set_gateway_mac_address(req.mac).await;
         Ok(Response::new(()))
     }
 }

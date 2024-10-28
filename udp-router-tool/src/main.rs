@@ -1,7 +1,7 @@
 use clap::Parser;
 use udp_router_protobuf::management::router_service_client::RouterServiceClient;
 use udp_router_protobuf::management::{
-    GetStatsRequest, SetLocalNetAndMaskRequest, SetBackendNetAndMaskRequest
+    GetStatsRequest, SetLocalNetAndMaskRequest, SetBackendNetAndMaskRequest, SetGatewayMacAddressRequest,
 };
 use std::net::Ipv4Addr;
 use tonic::Request;
@@ -27,6 +27,9 @@ struct Opt {
     /// Set backend network & mask (e.g. 10.0.0.0/8)
     #[clap(long, default_value = "")]
     set_backend_net_and_mask: String,
+    /// Set gateway MAC address (e.g. 00:11:22:33:44:55)
+    #[clap(long)]
+    set_gateway_mac_address: String,
 }
 
 #[tokio::main]
@@ -39,6 +42,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let (lnet, lmask) = parse_ip_mask(&opt.set_local_net_and_mask);
     let (bnet, bmask) = parse_ip_mask(&opt.set_backend_net_and_mask);
+    let mac = parse_mac_address(&opt.set_gateway_mac_address);
 
     if opt.stats {
         match client.get_stats(Request::new(GetStatsRequest {})).await {
@@ -73,6 +77,15 @@ async fn main() -> Result<(), anyhow::Error> {
         }
     }
 
+    if !opt.set_gateway_mac_address.is_empty() {
+        match client.set_gateway_mac_address(Request::new(SetGatewayMacAddressRequest { mac })).await {
+            Ok(_) => (),
+            Err(e) => {
+                panic!("Error contacting XDP hook: {:?}", e);
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -90,4 +103,20 @@ fn parse_ip_mask(s: &str) -> (u32, u32) {
     let mask = 0xffffffff_u32 << (32 - parts[1].parse::<u32>().unwrap());
 
     (net, mask)
+}
+
+fn parse_mac_address(s: &str) -> u64 {
+    let parts: Vec<&str> = s.split(':').collect();
+    if parts.len() != 6 {
+        panic!("Invalid MAC address:  {}", s);
+    }
+
+    let mut res = 0;
+    for part in parts.iter() {
+        let byte = u8::from_str_radix(part, 16).unwrap();
+        res = (res << 8) | byte as u64;
+    }
+    res >>= 8;
+
+    res
 }

@@ -42,6 +42,11 @@ impl BpfActorHandle {
         let msg = BpfActorMessage::SetBackendNetAndMask { net, mask };
         let _ = self.sender.send(msg).await;
     }
+
+    pub async fn set_gateway_mac_address(&self, mac: u64) {
+        let msg = BpfActorMessage::SetGatewayMacAddress { mac };
+        let _ = self.sender.send(msg).await;
+    }
 }
 
 //
@@ -67,6 +72,7 @@ struct StatsMaps {
 struct ConfigMaps {
     local_net_and_mask: Array<MapData, u64>,
     backend_net_and_mask: Array<MapData, u64>,
+    gateway_mac_address: Array<MapData, u64>,
 }
 
 #[derive(Clone, Debug)]
@@ -92,18 +98,72 @@ pub enum BpfActorMessage {
         net: u32,
         mask: u32,
     },
+    SetGatewayMacAddress {
+        mac: u64,
+    },
 }
 
 struct BpfActor {
     receiver: mpsc::Receiver<BpfActorMessage>,
+    stats: StatsMaps,
+    configs: ConfigMaps
 }
 
 impl BpfActor {
-    fn new(receiver: mpsc::Receiver<BpfActorMessage>) -> Self {
-        Self { receiver }
+    fn new(receiver: mpsc::Receiver<BpfActorMessage>, stats: StatsMaps, configs: ConfigMaps) -> Self {
+        Self { receiver, stats, configs }
     }
 
-    fn handle_message(&mut self, msg: BpfActorMessage) {}
+    fn handle_message(&mut self, msg: BpfActorMessage) {
+        match msg {
+            BpfActorMessage::GetStats { respond_to } => {
+                let _ = respond_to.send(self.get_stats());
+            }
+            BpfActorMessage::SetLocalNetAndMask { net, mask } => {
+                self.set_local_net_mask(net, mask);
+            }
+            BpfActorMessage::SetBackendNetAndMask { net, mask } => {
+                self.set_backend_net_mask(net, mask);
+            }
+            BpfActorMessage::SetGatewayMacAddress { mac } => {
+                self.set_gateway_mac_address(mac);
+            }
+        }
+    }
+
+
+    fn get_stats(&self) -> RouterStatistics {
+        println!("Requesting stats from eBPF hook");
+
+        let total_packets = read_metric!(self.stats.total_packets);
+        let client_to_server_packets = read_metric!(self.stats.client_to_server_packets);
+        let server_to_client_packets = read_metric!(self.stats.server_to_client_packets);
+
+        RouterStatistics {
+            total_packets,
+            client_to_server_packets,
+            server_to_client_packets
+        }
+    }
+
+    fn set_local_net_mask(&mut self, net: u32, mask: u32) {
+        let net_and_mask = ((net as u64) << 32) | (mask as u64);
+
+        write_map!(self.configs.local_net_and_mask, 0, net_and_mask);
+        println!("Setting network to {:#04x} and mask to {:#04x} ", net, mask);
+    }
+
+    fn set_backend_net_mask(&mut self, net: u32, mask: u32) {
+        let net_and_mask = ((net as u64) << 32) | (mask as u64);
+
+        write_map!(self.configs.backend_net_and_mask, 0, net_and_mask);
+        println!("Setting network to {:#04x} and mask to {:#04x} ", net, mask);
+    }
+
+    fn set_gateway_mac_address(&mut self, mac: u64) {
+        write_map!(self.configs.gateway_mac_address, 0, mac);
+        println!("Setting gateway MAC address to to {:#04x}", mac);
+    }
 }
 
 async fn run_actor(receiver: mpsc::Receiver<BpfActorMessage>, opt: Opt) {
@@ -142,7 +202,15 @@ async fn run_actor(receiver: mpsc::Receiver<BpfActorMessage>, opt: Opt) {
         server_to_client_packets: PerCpuArray::try_from(bpf.take_map("TOTAL_SERVER_TO_CLIENT_PACKETS").unwrap()).unwrap(),
     };
 
-    let mut actor = BpfActor::new(receiver);
+
+    let configs = ConfigMaps {
+        local_net_and_mask: Array::try_from(bpf.take_map("LOCAL_NET_AND_MASK").unwrap()).unwrap(),
+        backend_net_and_mask: Array::try_from(bpf.take_map("BACKEND_NET_AND_MASK").unwrap()).unwrap(),
+        gateway_mac_address: Array::try_from(bpf.take_map("GATEWAY_MAC_ADDRESS").unwrap()).unwrap(),
+    };
+
+
+    let mut actor = BpfActor::new(receiver, stats, configs);
     while let Some(msg) = actor.receiver.recv().await {
         actor.handle_message(msg);
     }
