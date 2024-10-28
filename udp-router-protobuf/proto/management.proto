@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package management;
+
+import "google/protobuf/empty.proto";
+
+service RouterService {
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse) {}
+  rpc SetLocalNetAndMask(SetLocalNetAndMaskRequest) returns (google.protobuf.Empty) {}
+  rpc SetBackendNetAndMask(SetBackendNetAndMaskRequest) returns (google.protobuf.Empty) {}
+}
+
+message GetStatsRequest {
+}
+
+message GetStatsResponse {
+  uint64 total_packets = 1;
+  uint64 client_to_server_packets = 2;
+  uint64 server_to_client_packets = 3;
+}
+
+//
+// Filter parameter updates
+//
+
+message SetLocalNetAndMaskRequest {
+  uint32 net = 1;
+  uint32 mask = 2;
+}
+
+message SetBackendNetAndMaskRequest {
+  uint32 net = 1;
+  uint32 mask = 2;
+}

@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
-members = ["xtask", "udp-router", "udp-router-common", "udp-router-ebpf"]
-default-members = ["xtask", "udp-router", "udp-router-common"]
+members = ["xtask", "udp-router", "udp-router-common", "udp-router-ebpf", "udp-router-protobuf"]
+default-members = ["xtask", "udp-router", "udp-router-common", "udp-router-protobuf"]
 
 [workspace.dependencies]
 aya = { version = "0.13.0", default-features = false }

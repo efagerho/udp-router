@@ -19,31 +19,29 @@ use network_types::{
 //
 // Configuration
 //
+// Assumptions: Clients/Routers/Servers on different subnets.
+//
 // XDP does not have access to ARP tables, so our userland controller must provide
 // the XDP program with all relevant MAC addresses. We therefore always communicate
 // with backend servers through the default GW by putting the MAC address of the GW
-// as the destination MAC address on all forwarded packets. This works even when
-// the backend servers are on the same subnet as the UDP router, but assumption is
-// that the routers are deployed on a different public subnet.
+// as the destination MAC address on all forwarded packets.
 //
 // As we must let through traffic from the local subnets (due to EC2 health checks),
-// we attach two IPs to the NIC of each router. The secondary IP is used as the
-// source IP on all packets forwarded to backend servers. This let's us distinguish
-// between packets from the local network that needs to be forwarded from packets
-// from the local network that are meant to be passed through to the TCP/IP stack.
+// we pass through all traffic from the local subnet. Due to this, clients and servers
+// must be on different subnets as the router. As the routers must distinguish
+// between client and server packets, we also assume clients and servers are on
+// distinct subnets.
+//
+// Note that backend & local network can overlap, i.e. backend can be whole VPC. The
+// local network takes precedence.
 
-// Used as source IP in all packets forwarded to backend servers.
-#[map]
-static mut MY_INTERNAL_IP: Array<u32> = Array::with_max_entries(1, 0);
-
-// Used as source IP in all packets forwarded to external clients.
-#[map]
-static mut MY_EXTERNAL_IP: Array<u32> = Array::with_max_entries(1, 0);
-
-// Any packets from this network are passed through XDP filter unless destination
-// IP is MY_INTERNAL_IP in which case it's a backend-to-client packet.
+// Any packets from this network are passed through XDP filter
 #[map]
 static mut LOCAL_NET_AND_MASK: Array<u64> = Array::with_max_entries(1, 0);
+
+// Any packets from this network are assumed to be backend server
+#[map]
+static mut BACKEND_NET_AND_MASK: Array<u64> = Array::with_max_entries(1, 0);
 
 // MAC address of default gateway of router.
 #[map]
