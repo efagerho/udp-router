@@ -64,6 +64,12 @@ macro_rules! read_metric {
     }};
 }
 
+macro_rules! write_map {
+    ($map:expr, $index:expr, $value:expr) => {{
+        $map.set($index, $value, 0).unwrap();
+    }};
+}
+
 struct StatsMaps {
     total_packets: PerCpuArray<MapData, u64>,
     client_to_server_packets: PerCpuArray<MapData, u64>,
@@ -106,12 +112,20 @@ pub enum BpfActorMessage {
 struct BpfActor {
     receiver: mpsc::Receiver<BpfActorMessage>,
     stats: StatsMaps,
-    configs: ConfigMaps
+    configs: ConfigMaps,
 }
 
 impl BpfActor {
-    fn new(receiver: mpsc::Receiver<BpfActorMessage>, stats: StatsMaps, configs: ConfigMaps) -> Self {
-        Self { receiver, stats, configs }
+    fn new(
+        receiver: mpsc::Receiver<BpfActorMessage>,
+        stats: StatsMaps,
+        configs: ConfigMaps,
+    ) -> Self {
+        Self {
+            receiver,
+            stats,
+            configs,
+        }
     }
 
     fn handle_message(&mut self, msg: BpfActorMessage) {
@@ -131,7 +145,6 @@ impl BpfActor {
         }
     }
 
-
     fn get_stats(&self) -> RouterStatistics {
         println!("Requesting stats from eBPF hook");
 
@@ -142,7 +155,7 @@ impl BpfActor {
         RouterStatistics {
             total_packets,
             client_to_server_packets,
-            server_to_client_packets
+            server_to_client_packets,
         }
     }
 
@@ -178,13 +191,19 @@ async fn run_actor(receiver: mpsc::Receiver<BpfActorMessage>, opt: Opt) {
     program.load().expect("Failed to load XDP program");
 
     if opt.force_skb_mode {
-        program.attach(&opt.iface, XdpFlags::SKB_MODE).expect("Failed to attach program in SKB mode");
+        program
+            .attach(&opt.iface, XdpFlags::SKB_MODE)
+            .expect("Failed to attach program in SKB mode");
         println!("Attached XDP program in SKB mode.");
     } else if opt.force_hw_mode {
-        program.attach(&opt.iface, XdpFlags::HW_MODE).expect("Failed to attach program in HW mode");
+        program
+            .attach(&opt.iface, XdpFlags::HW_MODE)
+            .expect("Failed to attach program in HW mode");
         println!("Attached XDP program in HW mode.");
     } else if opt.force_drv_mode {
-        program.attach(&opt.iface, XdpFlags::DRV_MODE).expect("Failed to attach program in DRV mode");
+        program
+            .attach(&opt.iface, XdpFlags::DRV_MODE)
+            .expect("Failed to attach program in DRV mode");
         println!("Attached XDP program in DRV mode.");
     } else if program.attach(&opt.iface, XdpFlags::HW_MODE).is_ok() {
         println!("Attached XDP program in HW mode.");
@@ -193,22 +212,29 @@ async fn run_actor(receiver: mpsc::Receiver<BpfActorMessage>, opt: Opt) {
     } else if opt.allow_skb_mode && program.attach(&opt.iface, XdpFlags::SKB_MODE).is_ok() {
         println!("Attached XDP program in SKB mode.");
     } else {
-        panic!("Failed to bind XDP program in HW or DRV mode. You might want to try --allow-skb-mode");
+        panic!(
+            "Failed to bind XDP program in HW or DRV mode. You might want to try --allow-skb-mode"
+        );
     }
 
     let stats = StatsMaps {
         total_packets: PerCpuArray::try_from(bpf.take_map("TOTAL_PACKETS").unwrap()).unwrap(),
-        client_to_server_packets: PerCpuArray::try_from(bpf.take_map("TOTAL_CLIENT_TO_SERVER_PACKETS").unwrap()).unwrap(),
-        server_to_client_packets: PerCpuArray::try_from(bpf.take_map("TOTAL_SERVER_TO_CLIENT_PACKETS").unwrap()).unwrap(),
+        client_to_server_packets: PerCpuArray::try_from(
+            bpf.take_map("CLIENT_TO_SERVER_PACKETS").unwrap(),
+        )
+        .unwrap(),
+        server_to_client_packets: PerCpuArray::try_from(
+            bpf.take_map("SERVER_TO_CLIENT_PACKETS").unwrap(),
+        )
+        .unwrap(),
     };
-
 
     let configs = ConfigMaps {
         local_net_and_mask: Array::try_from(bpf.take_map("LOCAL_NET_AND_MASK").unwrap()).unwrap(),
-        backend_net_and_mask: Array::try_from(bpf.take_map("BACKEND_NET_AND_MASK").unwrap()).unwrap(),
+        backend_net_and_mask: Array::try_from(bpf.take_map("BACKEND_NET_AND_MASK").unwrap())
+            .unwrap(),
         gateway_mac_address: Array::try_from(bpf.take_map("GATEWAY_MAC_ADDRESS").unwrap()).unwrap(),
     };
-
 
     let mut actor = BpfActor::new(receiver, stats, configs);
     while let Some(msg) = actor.receiver.recv().await {

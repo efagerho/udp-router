@@ -16,6 +16,18 @@ use network_types::{
     udp::UdpHdr,
 };
 
+// Macro for reading map constants
+macro_rules! read {
+    ($var:expr, $index:expr) => {{
+        unsafe {
+            match $var.get($index) {
+                Some(value) => *value,
+                None => 0,
+            }
+        }
+    }};
+}
+
 //
 // Configuration
 //
@@ -85,19 +97,34 @@ fn try_udp_router(ctx: XdpContext) -> Result<u32, ()> {
 
     let source_ip = u32::from_be(unsafe { (*ipv4hdr).src_addr });
 
-    if is_from_local_network(source_ip) && !is_from_backend_server(source_ip) {
+    if is_link_local_ip(source_ip) || is_from_local_network(source_ip) {
         return Ok(XDP_PASS);
     }
 
     try_forward_packet(&ctx)
 }
 
+fn is_link_local_ip(ip: u32) -> bool {
+    let link_local = (169 << 24) + (254 << 16);
+    let link_local_mask = 0xffff0000;
+
+    (ip & link_local_mask) == link_local
+}
+
 fn is_from_local_network(ip: u32) -> bool {
-    false
+    let local_and_mask = read!(LOCAL_NET_AND_MASK, 0);
+    let local = (local_and_mask >> 32) as u32;
+    let local_mask = (local_and_mask & 0xffffffff) as u32;
+
+    (ip & local_mask) == local
 }
 
 fn is_from_backend_server(ip: u32) -> bool {
-    false
+    let net_and_mask = read!(BACKEND_NET_AND_MASK, 0);
+    let net = (net_and_mask >> 32) as u32;
+    let mask = (net_and_mask & 0xffffffff) as u32;
+
+    (ip & mask) == net
 }
 
 fn try_forward_packet(ctx: &XdpContext) -> Result<u32, ()> {
@@ -168,12 +195,16 @@ fn try_forward_packet(ctx: &XdpContext) -> Result<u32, ()> {
     //
     // Step 3: Rewrite source and destination MAC address of forwarded packet
     //
+
     unsafe {
         (*ethhdr).src_addr = (*ethhdr).dst_addr;
-        (*ethhdr).dst_addr = get_destination_mac_address(target_ip_be);
+        (*ethhdr).dst_addr = get_gateway_mac_address();
     }
 
+    //
     // Step 4: Fix checksums
+    //
+
     unsafe {
         (*ipv4hdr).check = calculate_ip_checksum(&*(ipv4hdr.cast()));
         (*udphdr).check = u16::to_be(udp_csum_ne);
@@ -182,9 +213,9 @@ fn try_forward_packet(ctx: &XdpContext) -> Result<u32, ()> {
     Ok(xdp_action::XDP_TX)
 }
 
-fn get_gateway_mac_address(ip: u32) -> [u8; 6] {
-    // FIXME: Make the router MAC address a configurable value
-    router_mac
+fn get_gateway_mac_address() -> [u8; 6] {
+    let mac = read!(GATEWAY_MAC_ADDRESS, 0).to_be_bytes();
+    [mac[2], mac[3], mac[4], mac[5], mac[6], mac[7]]
 }
 
 #[inline(always)]
@@ -209,6 +240,10 @@ fn calculate_ip_checksum(ipv4hdr: &[u8; 20]) -> u16 {
 fn update_udp_checksum(csum: u16, old: u16, new: u16) -> u16 {
     !((!csum).wrapping_add(!old).wrapping_add(new))
 }
+
+//
+// Helpers
+//
 
 #[inline(always)]
 fn ptr_at_mut<T>(ctx: &XdpContext, offset: usize) -> Result<*mut T, ()> {

@@ -1,12 +1,13 @@
 use std::net::SocketAddr;
 
 use crate::bpf_actor::BpfActorHandle;
-use udp_router_protobuf::management::router_service_server::{RouterService, RouterServiceServer};
-use udp_router_protobuf::management::{
-    GetStatsRequest, GetStatsResponse, SetLocalNetAndMaskRequest, SetBackendNetAndMaskRequest, SetGatewayMacAddressRequest
-};
 use tokio::net::TcpListener;
 use tonic::{transport::Server, Request, Response, Status};
+use udp_router_protobuf::management::router_service_server::{RouterService, RouterServiceServer};
+use udp_router_protobuf::management::{
+    GetStatsRequest, GetStatsResponse, SetBackendNetAndMaskRequest, SetGatewayMacAddressRequest,
+    SetLocalNetAndMaskRequest,
+};
 
 #[derive(Debug, Clone)]
 pub struct ManagementServer {
@@ -25,7 +26,9 @@ impl ManagementServer {
     }
 
     pub async fn start(&self) {
-        let addr: SocketAddr = format!("{}:{}", self.bind_address, self.port).parse().unwrap();
+        let addr: SocketAddr = format!("{}:{}", self.bind_address, self.port)
+            .parse()
+            .unwrap();
         let sock = socket2::Socket::new(
             match addr {
                 SocketAddr::V4(_) => socket2::Domain::IPV4,
@@ -42,7 +45,9 @@ impl ManagementServer {
         sock.bind(&addr.into()).unwrap();
         sock.listen(1024).unwrap();
 
-        let incoming = tokio_stream::wrappers::TcpListenerStream::new(TcpListener::from_std(sock.into()).unwrap());
+        let incoming = tokio_stream::wrappers::TcpListenerStream::new(
+            TcpListener::from_std(sock.into()).unwrap(),
+        );
 
         Server::builder()
             .add_service(RouterServiceServer::new(self.clone()))
@@ -54,7 +59,10 @@ impl ManagementServer {
 
 #[tonic::async_trait]
 impl RouterService for ManagementServer {
-    async fn get_stats(&self, _req: Request<GetStatsRequest>) -> Result<Response<GetStatsResponse>, Status> {
+    async fn get_stats(
+        &self,
+        _req: Request<GetStatsRequest>,
+    ) -> Result<Response<GetStatsResponse>, Status> {
         let stats = self.bpf.get_router_stats().await;
 
         Ok(Response::new(GetStatsResponse {
@@ -64,19 +72,28 @@ impl RouterService for ManagementServer {
         }))
     }
 
-    async fn set_local_net_and_mask(&self, req: Request<SetLocalNetAndMaskRequest>) -> Result<Response<()>, Status> {
+    async fn set_local_net_and_mask(
+        &self,
+        req: Request<SetLocalNetAndMaskRequest>,
+    ) -> Result<Response<()>, Status> {
         let req = req.into_inner();
         self.bpf.set_local_net_mask(req.net, req.mask).await;
         Ok(Response::new(()))
     }
 
-    async fn set_backend_net_and_mask(&self, req: Request<SetBackendNetAndMaskRequest>) -> Result<Response<()>, Status> {
+    async fn set_backend_net_and_mask(
+        &self,
+        req: Request<SetBackendNetAndMaskRequest>,
+    ) -> Result<Response<()>, Status> {
         let req = req.into_inner();
         self.bpf.set_backend_net_mask(req.net, req.mask).await;
         Ok(Response::new(()))
     }
 
-    async fn set_gateway_mac_address(&self, req: Request<SetGatewayMacAddressRequest>) -> Result<Response<()>, Status> {
+    async fn set_gateway_mac_address(
+        &self,
+        req: Request<SetGatewayMacAddressRequest>,
+    ) -> Result<Response<()>, Status> {
         let req = req.into_inner();
         self.bpf.set_gateway_mac_address(req.mac).await;
         Ok(Response::new(()))
