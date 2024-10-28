@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
-members = ["xtask", "udp-router", "udp-router-common", "udp-router-ebpf", "udp-router-protobuf"]
-default-members = ["xtask", "udp-router", "udp-router-common", "udp-router-protobuf"]
+members = ["xtask", "udp-router", "udp-router-common", "udp-router-ebpf", "udp-router-protobuf", "udp-router-tool"]
+default-members = ["xtask", "udp-router", "udp-router-common", "udp-router-protobuf", "udp-router-tool"]
 
 [workspace.dependencies]
 aya = { version = "0.13.0", default-features = false }
@@ -25,6 +25,8 @@ prost-types = "0.13.3"
 tonic = "0.12.3"
 socket2 = "0.5.7"
 tokio-stream = { version = "0.1.16", features = ["net"] }
+serde = { version = "1.0.213", features = ["derive"] }
+serde_yaml = "0.9.34"
 
 [profile.dev]
 panic = "abort"
