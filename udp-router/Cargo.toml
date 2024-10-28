@@ -1,0 +1,25 @@
+[package]
+name = "udp-router"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+udp-router-common = { path = "../udp-router-common", features = ["user"] }
+
+anyhow = { workspace = true, default-features = true }
+aya = { workspace = true }
+aya-log = { workspace = true }
+env_logger = { workspace = true }
+libc = { workspace = true }
+log = { workspace = true }
+tokio = { workspace = true, features = ["sync", "macros", "rt", "rt-multi-thread", "net", "signal"] }
+clap = { workspace = true, features = ["derive"] }
+
+[build-dependencies]
+udp-router-ebpf = { path = "../udp-router-ebpf" }
+cargo_metadata.workspace = true
+xtask = { path = "../xtask" }
+
+[[bin]]
+name = "udp-router"
+path = "src/main.rs"
