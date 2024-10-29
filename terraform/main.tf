@@ -1,3 +1,52 @@
+locals {
+  user_data = <<-EOT
+    #!/bin/bash
+    yum group install -y "Development Tools"
+    yum install -y cmake ninja-build
+
+    curl https://sh.rustup.rs -sSf > RUSTUP.sh
+    sh RUSTUP.sh -y
+    rm RUSTUP.sh
+    echo "Installing for ec2-user.."
+    cp -r ~/.{cargo,rustup,bash_profile,profile} /home/ec2-user
+    chown -R ec2-user:ec2-user /home/ec2-user
+
+    #wget https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-19.1.2.tar.gz
+    #tar xvzf llvmorg-19.1.2.tar.gz
+    #cd llvm-project-llvmorg-19.1.2
+    #cmake -S llvm -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -G Ninja
+    #ninja -C build install
+
+    export PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+    curl -LO $PB_REL/download/v25.1/protoc-25.1-linux-aarch_64.zip
+    unzip protoc-25.1-linux-aarch_64.zip -d /usr/local
+  EOT
+
+  user_data_router = <<-EOT
+    #!/bin/bash
+    yum group install -y "Development Tools"
+    yum install -y cmake ninja-build
+
+    curl https://sh.rustup.rs -sSf > RUSTUP.sh
+    sh RUSTUP.sh -y
+    rm RUSTUP.sh
+    echo "Installing for ec2-user.."
+    cp -r ~/.{cargo,rustup,bash_profile,profile} /home/ec2-user
+    chown -R ec2-user:ec2-user /home/ec2-user
+
+    export PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+    curl -LO $PB_REL/download/v25.1/protoc-25.1-linux-aarch_64.zip
+    unzip protoc-25.1-linux-aarch_64.zip -d /usr/local
+    ip link set dev ens5 mtu 3498
+
+    wget https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-19.1.2.tar.gz
+    tar xvzf llvmorg-19.1.2.tar.gz
+    cd llvm-project-llvmorg-19.1.2
+    cmake -S llvm -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -G Ninja
+    ninja -C build install
+  EOT
+}
+
 #
 # VPC
 #
@@ -130,12 +179,15 @@ module "clients" {
 
   private_ip             = cidrhost("10.0.1.0/24", 10 + count.index)
   associate_public_ip_address = true
-  ami                    = "ami-0929f698754f34ba7"
+  ami                    = "ami-02801556a781a4499"
   instance_type          = "c7gn.xlarge"
   key_name               = "udp-router-loadtest-key"
   monitoring             = true
   vpc_security_group_ids = [aws_security_group.instance.id]
   subnet_id              = aws_subnet.client.id
+
+  user_data_base64            = base64encode(local.user_data)
+  user_data_replace_on_change = true
 
   root_block_device = [{
     volume_size = 30
@@ -156,12 +208,15 @@ module "router" {
   private_ip             = "10.0.2.10"
   secondary_private_ips  = ["10.0.2.11"]
   associate_public_ip_address = true
-  ami                    = "ami-0929f698754f34ba7"
+  ami                    = "ami-02801556a781a4499"
   instance_type          = "c7gn.xlarge"
   key_name               = "udp-router-loadtest-key"
   monitoring             = true
   vpc_security_group_ids = [aws_security_group.instance.id]
   subnet_id              = aws_subnet.router.id
+
+  user_data_base64            = base64encode(local.user_data_router)
+  user_data_replace_on_change = true
 
   root_block_device = [{
     volume_size = 30
@@ -183,12 +238,15 @@ module "servers" {
 
   private_ip             = cidrhost("10.0.3.0/24", 10 + count.index)
   associate_public_ip_address = true
-  ami                    = "ami-0929f698754f34ba7"
+  ami                    = "ami-02801556a781a4499"
   instance_type          = "c7gn.xlarge"
   key_name               = "udp-router-loadtest-key"
   monitoring             = true
   vpc_security_group_ids = [aws_security_group.instance.id]
   subnet_id              = aws_subnet.server.id
+
+  user_data_base64            = base64encode(local.user_data)
+  user_data_replace_on_change = true
 
   root_block_device = [{
     volume_size = 30

@@ -238,7 +238,7 @@ fn calculate_ip_checksum(ipv4hdr: &[u8; 20]) -> u16 {
 // Algorithm: https://www.rfc-editor.org/rfc/rfc1624
 #[inline(always)]
 fn update_udp_checksum(csum: u16, old: u16, new: u16) -> u16 {
-    !((!csum).wrapping_add(!old).wrapping_add(new))
+    !((!csum).wrapping_sub(old).wrapping_add(new))
 }
 
 //
