@@ -1,5 +1,5 @@
-use tokio::net::UdpSocket;
 use tokio::io;
+use tokio::net::UdpSocket;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {

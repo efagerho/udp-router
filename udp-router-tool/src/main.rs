@@ -1,10 +1,11 @@
 use clap::Parser;
-use udp_router_protobuf::management::router_service_client::RouterServiceClient;
-use udp_router_protobuf::management::{
-    GetStatsRequest, SetLocalNetAndMaskRequest, SetBackendNetAndMaskRequest, SetGatewayMacAddressRequest,
-};
 use std::net::Ipv4Addr;
 use tonic::Request;
+use udp_router_protobuf::management::router_service_client::RouterServiceClient;
+use udp_router_protobuf::management::{
+    GetStatsRequest, SetBackendNetAndMaskRequest, SetGatewayMacAddressRequest,
+    SetLocalNetAndMaskRequest,
+};
 
 //
 // Command line parsing
@@ -60,7 +61,13 @@ async fn main() -> Result<(), anyhow::Error> {
     }
 
     if !opt.set_local_net_and_mask.is_empty() {
-        match client.set_local_net_and_mask(Request::new(SetLocalNetAndMaskRequest { net: lnet, mask: lmask })).await {
+        match client
+            .set_local_net_and_mask(Request::new(SetLocalNetAndMaskRequest {
+                net: lnet,
+                mask: lmask,
+            }))
+            .await
+        {
             Ok(_) => (),
             Err(e) => {
                 panic!("Error contacting XDP hook: {:?}", e);
@@ -69,7 +76,13 @@ async fn main() -> Result<(), anyhow::Error> {
     }
 
     if !opt.set_backend_net_and_mask.is_empty() {
-        match client.set_backend_net_and_mask(Request::new(SetBackendNetAndMaskRequest { net: bnet, mask: bmask })).await {
+        match client
+            .set_backend_net_and_mask(Request::new(SetBackendNetAndMaskRequest {
+                net: bnet,
+                mask: bmask,
+            }))
+            .await
+        {
             Ok(_) => (),
             Err(e) => {
                 panic!("Error contacting XDP hook: {:?}", e);
@@ -78,7 +91,10 @@ async fn main() -> Result<(), anyhow::Error> {
     }
 
     if !opt.set_gateway_mac_address.is_empty() {
-        match client.set_gateway_mac_address(Request::new(SetGatewayMacAddressRequest { mac })).await {
+        match client
+            .set_gateway_mac_address(Request::new(SetGatewayMacAddressRequest { mac }))
+            .await
+        {
             Ok(_) => (),
             Err(e) => {
                 panic!("Error contacting XDP hook: {:?}", e);
