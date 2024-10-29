@@ -116,7 +116,6 @@ fn parse_mac_address(s: &str) -> u64 {
         let byte = u8::from_str_radix(part, 16).unwrap();
         res = (res << 8) | byte as u64;
     }
-    res >>= 8;
 
     res
 }
