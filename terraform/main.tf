@@ -167,6 +167,28 @@ resource "aws_vpc_security_group_egress_rule" "allow_all" {
   ip_protocol       = "-1"
 }
 
+resource "aws_security_group" "router" {
+  name        = "udp-router-loadtest-router-sg"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Terraform = "true"
+    Name = "ed-testing"
+  }
+}
+
+resource "aws_vpc_security_group_egress_rule" "all_in" {
+  security_group_id = aws_security_group.router.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "all_out" {
+  security_group_id = aws_security_group.router.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}
+
 #
 # EC2 instances
 #
@@ -180,7 +202,7 @@ module "clients" {
   private_ip             = cidrhost("10.0.1.0/24", 10 + count.index)
   associate_public_ip_address = true
   ami                    = "ami-02801556a781a4499"
-  instance_type          = "c7gn.xlarge"
+  instance_type          = var.client_instance_type
   key_name               = "udp-router-loadtest-key"
   monitoring             = true
   vpc_security_group_ids = [aws_security_group.instance.id]
@@ -209,10 +231,10 @@ module "router" {
   secondary_private_ips  = ["10.0.2.11"]
   associate_public_ip_address = true
   ami                    = "ami-02801556a781a4499"
-  instance_type          = "c7gn.xlarge"
+  instance_type          = var.router_instance_type
   key_name               = "udp-router-loadtest-key"
   monitoring             = true
-  vpc_security_group_ids = [aws_security_group.instance.id]
+  vpc_security_group_ids = [aws_security_group.router.id]
   subnet_id              = aws_subnet.router.id
 
   user_data_base64            = base64encode(local.user_data_router)
@@ -239,7 +261,7 @@ module "servers" {
   private_ip             = cidrhost("10.0.3.0/24", 10 + count.index)
   associate_public_ip_address = true
   ami                    = "ami-02801556a781a4499"
-  instance_type          = "c7gn.xlarge"
+  instance_type          = var.server_instance_type
   key_name               = "udp-router-loadtest-key"
   monitoring             = true
   vpc_security_group_ids = [aws_security_group.instance.id]
