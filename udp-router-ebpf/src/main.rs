@@ -213,6 +213,7 @@ fn try_forward_packet(ctx: &XdpContext) -> Result<u32, ()> {
     Ok(xdp_action::XDP_TX)
 }
 
+#[inline(always)]
 fn get_gateway_mac_address() -> [u8; 6] {
     let mac = read!(GATEWAY_MAC_ADDRESS, 0).to_be_bytes();
     [mac[2], mac[3], mac[4], mac[5], mac[6], mac[7]]
