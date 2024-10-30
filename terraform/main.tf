@@ -38,6 +38,7 @@ locals {
     curl -LO $PB_REL/download/v25.1/protoc-25.1-linux-aarch_64.zip
     unzip protoc-25.1-linux-aarch_64.zip -d /usr/local
     ip link set dev ens5 mtu 3498
+    ethtool -L ens5 combined 1
 
     wget https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-19.1.2.tar.gz
     tar xvzf llvmorg-19.1.2.tar.gz
