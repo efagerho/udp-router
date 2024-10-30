@@ -13,6 +13,7 @@ log = { workspace = true }
 tokio = { workspace = true, features = ["sync", "macros", "rt", "rt-multi-thread", "net", "signal"] }
 clap = { workspace = true, features = ["derive"] }
 tokio-stream = { workspace = true }
+hdrhistogram = "7.5.4"
 
 [build-dependencies]
 cargo_metadata.workspace = true
