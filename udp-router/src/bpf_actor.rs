@@ -163,14 +163,14 @@ impl BpfActor {
         let net_and_mask = ((net as u64) << 32) | (mask as u64);
 
         write_map!(self.configs.local_net_and_mask, 0, net_and_mask);
-        println!("Setting network to {:#04x} and mask to {:#04x} ", net, mask);
+        println!("Setting local network to {:#04x} and mask to {:#04x} ", net, mask);
     }
 
     fn set_backend_net_mask(&mut self, net: u32, mask: u32) {
         let net_and_mask = ((net as u64) << 32) | (mask as u64);
 
         write_map!(self.configs.backend_net_and_mask, 0, net_and_mask);
-        println!("Setting network to {:#04x} and mask to {:#04x} ", net, mask);
+        println!("Setting backend network to {:#04x} and mask to {:#04x} ", net, mask);
     }
 
     fn set_gateway_mac_address(&mut self, mac: u64) {
